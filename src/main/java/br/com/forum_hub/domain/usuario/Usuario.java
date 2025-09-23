@@ -54,4 +54,6 @@ public class Usuario implements UserDetails {
   public String getNomeCompleto() {
     return nomeCompleto;
   }
+
+  public Long getId() {return id;}
 }
