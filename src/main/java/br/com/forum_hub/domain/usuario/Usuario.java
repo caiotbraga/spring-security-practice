@@ -1,17 +1,23 @@
 package br.com.forum_hub.domain.usuario;
 
+import br.com.forum_hub.domain.perfil.Perfil;
 import br.com.forum_hub.infra.exception.RegraDeNegocioException;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
-import jakarta.validation.Valid;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -40,10 +46,16 @@ public class Usuario implements UserDetails {
 
   private LocalDateTime expiracaoToken;
 
-  public Usuario() {
-  }
+  private Boolean ativo;
 
-  public Usuario(@Valid DadosCadastroUsuario dados, String senhaCriptografada) {
+  @ManyToMany(fetch = FetchType.EAGER)
+  @JoinTable(name = "usuarios_perfis", joinColumns = @JoinColumn(name = "usuario_id"),
+      inverseJoinColumns = @JoinColumn(name = "perfil_id"))
+  private List<Perfil> perfis = new ArrayList<>();
+
+  public Usuario() {}
+
+  public Usuario(DadosCadastroUsuario dados, String senhaCriptografada, Perfil perfil) {
     this.nomeCompleto = dados.nomeCompleto();
     this.email = dados.email();
     this.senha = senhaCriptografada;
@@ -53,11 +65,13 @@ public class Usuario implements UserDetails {
     this.verificado = false;
     this.token = UUID.randomUUID().toString();
     this.expiracaoToken = LocalDateTime.now().plusMinutes(30);
+    this.ativo = false;
+    this.perfis.add(perfil);
   }
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return null;
+    return perfis;
   }
 
   @Override
@@ -68,6 +82,11 @@ public class Usuario implements UserDetails {
   @Override
   public String getUsername() {
     return email;
+  }
+
+  @Override
+  public boolean isEnabled() {
+    return ativo;
   }
 
   public String getNomeUsuario() {
@@ -97,5 +116,34 @@ public class Usuario implements UserDetails {
     this.verificado = true;
     this.token = null;
     this.expiracaoToken = null;
+  }
+
+  public Usuario alterarDados(DadosEdicaoUsuario dados) {
+    if (dados.nomeUsuario() != null) {
+      this.nomeUsuario = dados.nomeUsuario();
+    }
+    if (dados.miniBiografia() != null) {
+      this.miniBiografia = dados.miniBiografia();
+    }
+    if (dados.biografia() != null) {
+      this.biografia = dados.biografia();
+    }
+    return this;
+  }
+
+  public void alterarSenha(String senhaCriptografada) {
+    this.senha = senhaCriptografada;
+  }
+
+  public void desativar() {
+    this.ativo = false;
+  }
+
+  public void adicionarPerfil(Perfil perfil) {
+    this.perfis.add(perfil);
+  }
+
+  public void removerPerfil(Perfil perfil) {
+    this.perfis.remove(perfil);
   }
 }
