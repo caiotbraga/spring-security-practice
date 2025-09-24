@@ -32,7 +32,7 @@ public class FiltroTokenAcesso extends OncePerRequestFilter {
 
     if (tokenJWT != null) {
       var email = tokenService.verificarToken(tokenJWT);
-      var user = usuarioRepository.findByEmailIgnoreCase(email).orElseThrow();
+      var user = usuarioRepository.findByEmailIgnoreCaseAndVerificadoTrue(email).orElseThrow();
       var authentication =
           new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
       SecurityContextHolder.getContext().setAuthentication(authentication);
