@@ -1,5 +1,6 @@
 package br.com.forum_hub.domain.usuario;
 
+import br.com.forum_hub.infra.exception.RegraDeNegocioException;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -39,7 +40,7 @@ public class Usuario implements UserDetails {
 
   private LocalDateTime expiracaoToken;
 
-  public Usuario(){
+  public Usuario() {
   }
 
   public Usuario(@Valid DadosCadastroUsuario dados, String senhaCriptografada) {
@@ -86,4 +87,15 @@ public class Usuario implements UserDetails {
   }
 
   public Long getId() {return id;}
+
+  public String getToken() {return token;}
+
+  public void verificar() {
+    if (expiracaoToken.isBefore(LocalDateTime.now())) {
+      throw new RegraDeNegocioException("Link de verificação expirou!");
+    }
+    this.verificado = true;
+    this.token = null;
+    this.expiracaoToken = null;
+  }
 }

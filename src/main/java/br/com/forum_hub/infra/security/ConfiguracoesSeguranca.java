@@ -2,7 +2,6 @@ package br.com.forum_hub.infra.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -31,7 +30,8 @@ public class ConfiguracoesSeguranca {
   @Bean
   public SecurityFilterChain filtrosSeguranca(HttpSecurity http) throws Exception {
     return http.authorizeHttpRequests(req -> {
-          req.requestMatchers(HttpMethod.POST, "/login", "/atualizar-token").permitAll();
+          req.requestMatchers("/login", "/atualizar-token", "/registrar", "verificar-conta")
+              .permitAll();
           req.anyRequest().authenticated();
         }).sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .csrf(csrf -> csrf.disable())

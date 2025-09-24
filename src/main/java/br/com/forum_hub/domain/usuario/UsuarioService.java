@@ -1,5 +1,6 @@
 package br.com.forum_hub.domain.usuario;
 
+import br.com.forum_hub.infra.email.EmailService;
 import br.com.forum_hub.infra.exception.RegraDeNegocioException;
 import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,10 +17,13 @@ public class UsuarioService implements UserDetailsService {
 
   private final UsuarioRepository usuarioRepository;
   private final PasswordEncoder passwordEncoder;
+  private final EmailService emailService;
 
-  public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder) {
+  public UsuarioService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder,
+      EmailService emailService) {
     this.usuarioRepository = usuarioRepository;
     this.passwordEncoder = passwordEncoder;
+    this.emailService = emailService;
   }
 
   @Override
@@ -30,14 +34,22 @@ public class UsuarioService implements UserDetailsService {
 
   @Transactional
   public Usuario cadastrar(@Valid DadosCadastroUsuario dados) {
-    Optional<Usuario> optionalUsuario = usuarioRepository.findByEmailIgnoreCaseOrNomeUsuarioIgnoreCase(dados.email());
-
-    if(optionalUsuario.isPresent()){
-      throw new RegraDeNegocioException("Já existe uma conta cadastrada com esse email ou nome de usuário!");
+    Optional<Usuario> optionalUsuario =
+        usuarioRepository.findByEmailIgnoreCaseOrNomeUsuarioIgnoreCase(dados.email(),
+            dados.nomeUsuario());
+    if (optionalUsuario.isPresent()) {
+      throw new RegraDeNegocioException(
+          "Já existe uma conta cadastrada com esse email ou nome de usuário!");
     }
-
     var senhaCriptografada = passwordEncoder.encode(dados.senha());
     var usuario = new Usuario(dados, senhaCriptografada);
+    emailService.enviarEmailVerificacao(usuario);
     return usuarioRepository.save(usuario);
+  }
+
+  @Transactional
+  public void verificarEmail(String codigo) {
+    var usuario = usuarioRepository.findByToken(codigo).orElseThrow();
+    usuario.verificar();
   }
 }
